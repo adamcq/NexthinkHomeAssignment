@@ -13,7 +13,7 @@ export function Input({ label, error, fullWidth = true, className = '', id, ...p
   return (
     <div className={widthStyles}>
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor={inputId} className="block text-sm font-semibold text-gray-700 mb-3">
           {label}
         </label>
       )}
@@ -22,7 +22,7 @@ export function Input({ label, error, fullWidth = true, className = '', id, ...p
         className={`input-field ${error ? 'border-red-500 focus:ring-red-500' : ''} ${className}`}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

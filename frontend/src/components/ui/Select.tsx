@@ -14,7 +14,7 @@ export function Select({ label, error, fullWidth = true, className = '', id, chi
   return (
     <div className={widthStyles}>
       {label && (
-        <label htmlFor={selectId} className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor={selectId} className="block text-sm font-semibold text-gray-700 mb-3">
           {label}
         </label>
       )}
@@ -25,7 +25,7 @@ export function Select({ label, error, fullWidth = true, className = '', id, chi
       >
         {children}
       </select>
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

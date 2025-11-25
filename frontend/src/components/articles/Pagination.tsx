@@ -15,7 +15,7 @@ export function Pagination({ currentPage, totalItems, itemsPerPage, onPageChange
   if (totalPages <= 1) return null;
 
   return (
-    <div className="mt-6 flex justify-center gap-2">
+    <div className="flex justify-center items-center gap-4">
       <Button
         variant="secondary"
         onClick={() => onPageChange(currentPage - 1)}
@@ -24,7 +24,7 @@ export function Pagination({ currentPage, totalItems, itemsPerPage, onPageChange
         Previous
       </Button>
       
-      <span className="px-4 py-2 text-gray-600">
+      <span className="px-6 py-3 text-gray-600 font-medium">
         Page {currentPage} of {totalPages}
       </span>
       

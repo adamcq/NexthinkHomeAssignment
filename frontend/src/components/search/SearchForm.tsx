@@ -13,31 +13,17 @@ interface SearchFormProps {
 
 export function SearchForm({ query, category, onQueryChange, onCategoryChange, onSubmit }: SearchFormProps) {
   return (
-    <Card>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <Input
-          label="Search Articles"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Enter keywords to search..."
-        />
-
-        <div className="flex gap-4">
+    <Card padding="lg">
+      <form onSubmit={onSubmit}>
+        <div className="flex gap-3">
           <div className="flex-1">
-            <Select
-              label="Category"
-              value={category}
-              onChange={(e) => onCategoryChange(e.target.value as Category | '')}
-            >
-              <option value="">All Categories</option>
-              {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
+            <Input
+              label="Search Articles"
+              value={query}
+              onChange={(e) => onQueryChange(e.target.value)}
+              placeholder="Enter keywords to search..."
+            />
           </div>
-
           <div className="flex items-end">
             <Button type="submit">Search</Button>
           </div>

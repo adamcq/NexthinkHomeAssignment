@@ -22,23 +22,30 @@ function App() {
   const { categoryStats } = useCategoryStats();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Header
         title="IT Newsfeed System"
         subtitle="Real-time IT news aggregation and classification"
       />
 
       <Container>
-        <div className="space-y-8">
-          <SearchForm
-            query={searchQuery}
-            category={selectedCategory}
-            onQueryChange={setSearchQuery}
-            onCategoryChange={setSelectedCategory}
-            onSubmit={handleSearch}
-          />
-
-          {categoryStats && <CategoryStats stats={categoryStats} />}
+        <div className="space-y-12 py-4">
+          <div className="space-y-3">
+            <SearchForm
+              query={searchQuery}
+              category={selectedCategory}
+              onQueryChange={setSearchQuery}
+              onCategoryChange={setSelectedCategory}
+              onSubmit={handleSearch}
+            />
+            {categoryStats && (
+              <CategoryStats 
+                stats={categoryStats} 
+                selectedCategory={selectedCategory}
+                onCategorySelect={setSelectedCategory}
+              />
+            )}
+          </div>
 
           <ArticleList
             articles={searchResults?.articles}

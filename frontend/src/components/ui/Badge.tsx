@@ -20,19 +20,19 @@ const variantStyles: Record<BadgeVariant, string> = {
 };
 
 const categoryStyles: Record<Category, string> = {
-  CYBERSECURITY: 'bg-red-100 text-red-800',
-  AI_EMERGING_TECH: 'bg-purple-100 text-purple-800',
-  SOFTWARE_DEVELOPMENT: 'bg-blue-100 text-blue-800',
-  HARDWARE_DEVICES: 'bg-green-100 text-green-800',
-  TECH_INDUSTRY_BUSINESS: 'bg-yellow-100 text-yellow-800',
-  OTHER: 'bg-gray-100 text-gray-800',
+  CYBERSECURITY: 'bg-red-50 text-red-700 border border-red-100',
+  AI_EMERGING_TECH: 'bg-purple-50 text-purple-700 border border-purple-100',
+  SOFTWARE_DEVELOPMENT: 'bg-blue-50 text-blue-700 border border-blue-100',
+  HARDWARE_DEVICES: 'bg-green-50 text-green-700 border border-green-100',
+  TECH_INDUSTRY_BUSINESS: 'bg-amber-50 text-amber-700 border border-amber-100',
+  OTHER: 'bg-gray-50 text-gray-700 border border-gray-100',
 };
 
 export function Badge({ children, variant = 'default', category, className = '' }: BadgeProps) {
   const colorStyles = category ? categoryStyles[category] : variantStyles[variant];
 
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${colorStyles} ${className}`}>
+    <span className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${colorStyles} ${className}`}>
       {children}
     </span>
   );

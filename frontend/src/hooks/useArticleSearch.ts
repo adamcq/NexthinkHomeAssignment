@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { searchArticles } from '../services/api';
 import type { SearchParams, Category } from '../types';
@@ -10,6 +10,15 @@ export function useArticleSearch() {
     limit: 20,
     offset: 0,
   });
+
+  useEffect(() => {
+    setSearchParams({
+      query: searchQuery || undefined,
+      category: selectedCategory || undefined,
+      limit: 20,
+      offset: 0,
+    });
+  }, [selectedCategory]);
 
   const { data: searchResults, isLoading, error, refetch } = useQuery({
     queryKey: ['articles', searchParams],
