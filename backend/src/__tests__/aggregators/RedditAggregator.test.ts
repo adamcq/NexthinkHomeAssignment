@@ -30,7 +30,7 @@ describe('RedditAggregator', () => {
   describe('fetchPosts', () => {
     it('fetches fixed number of posts', async () => {
       const axios = require('axios');
-      const posts = Array.from({ length: 50 }, (_, i) => ({
+      const posts = Array.from({ length: 20 }, (_, i) => ({
         data: {
           id: `p${i}`,
           title: `Post ${i}`,
@@ -55,9 +55,9 @@ describe('RedditAggregator', () => {
 
       const result = await aggregator.fetchPosts('technology');
 
-      expect(result).toHaveLength(50);
+      expect(result).toHaveLength(20);
       expect(axios.get).toHaveBeenCalledWith(
-        expect.stringContaining('limit=50'),
+        expect.stringContaining('limit=20'),
         expect.any(Object)
       );
     });

@@ -43,7 +43,11 @@ describe('LLMClassificationService', () => {
       const result = await classifier.classifyArticle(
         'Security Breach at Major Tech Company',
         'A major security vulnerability was discovered...',
-        ['Security', 'Breach']
+        {
+          type: 'rss',
+          source: 'TechCrunch',
+          rssCategories: ['Security', 'Breach']
+        }
       );
 
       expect(result.category).toBe(Category.CYBERSECURITY);

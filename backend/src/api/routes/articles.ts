@@ -30,6 +30,8 @@ const searchSchema = z.object({
 });
 type SearchRequestBody = z.infer<typeof searchSchema>;
 
+// TODO: Implement SWAGGER documentation for all endpoints
+
 /**
  * @swagger
  * /api/articles/search:

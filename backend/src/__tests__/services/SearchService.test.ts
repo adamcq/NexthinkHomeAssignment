@@ -51,11 +51,11 @@ describe('SearchService', () => {
           title: 'AI Article',
           content: 'Article about AI',
           category: Category.AI_EMERGING_TECH,
+          total_count: BigInt(1),
         },
       ];
 
       (db.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockArticles);
-      (db.article.count as jest.Mock).mockResolvedValue(1);
 
       const result = await searchService.search({
         query: 'artificial intelligence',
@@ -124,12 +124,11 @@ describe('SearchService', () => {
       (redis.setex as jest.Mock).mockResolvedValue('OK');
 
       const mockArticles = [
-        { id: '11', title: 'Article 11' },
-        { id: '12', title: 'Article 12' },
+        { id: '11', title: 'Article 11', total_count: BigInt(25) },
+        { id: '12', title: 'Article 12', total_count: BigInt(25) },
       ];
 
       (db.$queryRawUnsafe as jest.Mock).mockResolvedValue(mockArticles);
-      (db.article.count as jest.Mock).mockResolvedValue(25);
 
       const result = await searchService.search({
         query: 'test',

@@ -47,17 +47,19 @@ export class SearchService {
 
     try {
       let articles;
+      let total;
       
       if (query) {
         // Perform hybrid search (keyword + semantic)
-        articles = await this.hybridSearch(query, params);
+        const result = await this.hybridSearch(query, params);
+        articles = result.articles;
+        total = result.total;
       } else {
         // Simple filtered query
-        articles = await this.filteredSearch(params);
+        const result = await this.filteredSearch(params);
+        articles = result.articles;
+        total = result.total;
       }
-
-      // Get total count
-      const total = await this.getCount(params);
 
       const result: SearchResult = {
         articles,
@@ -78,7 +80,7 @@ export class SearchService {
     }
   }
 
-  private async hybridSearch(query: string, params: SearchParams): Promise<any[]> {
+  private async hybridSearch(query: string, params: SearchParams): Promise<{ articles: any[]; total: number }> {
     const { category, startDate, endDate, source, limit = 20, offset = 0 } = params;
 
     let vectorLiteral: string | null = null;
@@ -125,7 +127,7 @@ export class SearchService {
     const filters: string[] = [];
     let dynamicIndex = 2;
     if (category) {
-      filters.push(`category = $${dynamicIndex++}`);
+      filters.push(`category = $${dynamicIndex++}::"Category"`);
     }
     if (source) {
       filters.push(`source = $${dynamicIndex++}`);
@@ -148,7 +150,8 @@ export class SearchService {
           id, title, content, summary, url, source, author, 
           "publishedAt", "fetchedAt", category, "categoryScore",
           ${textRankExpr} as text_rank,
-          ${vectorScoreExpr} as vector_score
+          ${vectorScoreExpr} as vector_score,
+          COUNT(*) OVER() as total_count
         FROM "Article"
         WHERE to_tsvector('english', title || ' ' || content) @@ plainto_tsquery('english', $1)
         ${whereClause}
@@ -163,12 +166,16 @@ export class SearchService {
 
     valueParams.push(limit, offset);
 
-    const articles = await prisma.$queryRawUnsafe(queryText, ...valueParams);
+    const results = await prisma.$queryRawUnsafe(queryText, ...valueParams) as any[];
+    const total = results.length > 0 ? Number(results[0].total_count) : 0;
+    
+    // Remove total_count from each article object to avoid BigInt serialization issues
+    const articles = results.map(({ total_count, ...article }) => article);
 
-    return articles as any[];
+    return { articles, total };
   }
 
-  private async filteredSearch(params: SearchParams): Promise<any[]> {
+  private async filteredSearch(params: SearchParams): Promise<{ articles: any[]; total: number }> {
     const { category, startDate, endDate, source, limit = 20, offset = 0 } = params;
 
     const where: any = {};
@@ -181,55 +188,17 @@ export class SearchService {
       if (endDate) where.publishedAt.lte = endDate;
     }
 
-    return await prisma.article.findMany({
-      where,
-      orderBy: { publishedAt: 'desc' },
-      skip: offset,
-      take: limit,
-    });
-  }
+    const [articles, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        orderBy: { publishedAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.article.count({ where })
+    ]);
 
-  private async getCount(params: SearchParams): Promise<number> {
-    const { query, category, startDate, endDate, source } = params;
-
-    const where: any = {};
-    
-    if (category) where.category = category;
-    if (source) where.source = source;
-    if (startDate || endDate) {
-      where.publishedAt = {};
-      if (startDate) where.publishedAt.gte = startDate;
-      if (endDate) where.publishedAt.lte = endDate;
-    }
-
-    if (query) {
-      // Count with full-text search (if supported)
-      const result = await prisma.$queryRawUnsafe(`
-        SELECT COUNT(*) as count
-        FROM "Article"
-        WHERE to_tsvector('english', title || ' ' || content) @@ plainto_tsquery('english', $1)
-        ${category ? `AND category = $2` : ''}
-        ${source ? `AND source = $${category ? 3 : 2}` : ''}
-      `, query, ...(category ? [category] : []), ...(source ? [source] : [])) as Array<{ count?: string }>;
-
-      const countValue = result?.[0]?.count;
-      if (countValue !== undefined) {
-        return parseInt(countValue, 10);
-      }
-
-      // Fallback to simple LIKE-based count when raw result is unavailable (e.g., in tests)
-      return await prisma.article.count({
-        where: {
-          ...where,
-          OR: [
-            { title: { contains: query, mode: 'insensitive' } },
-            { content: { contains: query, mode: 'insensitive' } },
-          ],
-        },
-      });
-    }
-
-    return await prisma.article.count({ where });
+    return { articles, total };
   }
 
   async getArticleById(id: string): Promise<any | null> {
