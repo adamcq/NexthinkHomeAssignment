@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+model Article {
+  id            String   @id @default(uuid())
+  title         String
+  content       String   @db.Text
+  summary       String?  @db.Text
+  url           String   @unique
+  source        String   // 'reddit', 'arstechnica', 'techcrunch'
+  sourceId      String   // Original ID from source
+  author        String?
+  publishedAt   DateTime
+  fetchedAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Classification fields
+  category      Category?
+  categoryScore Float?   // Confidence score from LLM
+  
+  // Vector embedding for semantic search (1536 dimensions for text-embedding-004)
+  embedding     Unsupported("vector(768)")?
+  
+  // Additional metadata
+  metadata      Json?    // Source-specific data (score, comments, etc.)
+  
+  @@index([source])
+  @@index([publishedAt])
+  @@index([category])
+  @@index([fetchedAt])
+  @@index([url])
+}
+
+enum Category {
+  CYBERSECURITY
+  AI_EMERGING_TECH
+  SOFTWARE_DEVELOPMENT
+  HARDWARE_DEVICES
+  TECH_INDUSTRY_BUSINESS
+  OTHER
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime?
+  isActive    Boolean  @default(true)
+  
+  @@index([key])
+}
