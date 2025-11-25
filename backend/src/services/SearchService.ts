@@ -208,6 +208,8 @@ export class SearchService {
   }
 
   async getCategoryStats(): Promise<any> {
+    const allCategories = Object.values(Category);
+
     const stats = await prisma.article.groupBy({
       by: ['category'],
       _count: {
@@ -218,9 +220,16 @@ export class SearchService {
       },
     });
 
-    return stats.map(stat => ({
-      category: stat.category,
-      count: stat._count.id ?? (stat._count as any)._all ?? 0,
+    // Map results for easy lookup
+    const statMap = new Map<string, number>();
+    stats.forEach(stat => {
+      statMap.set(stat.category, stat._count.id ?? (stat._count as any)._all ?? 0);
+    });
+
+    // Return all categories, filling missing ones with 0
+    return allCategories.map(category => ({
+      category,
+      count: statMap.get(category) ?? 0,
     }));
   }
 
