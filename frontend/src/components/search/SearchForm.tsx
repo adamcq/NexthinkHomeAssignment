@@ -1,7 +1,6 @@
-import { FormEvent } from 'react';
+import type { FormEvent } from 'react';
 import type { Category } from '../../types';
-import { CATEGORY_LABELS } from '../../config/constants';
-import { Card, Input, Select, Button } from '../ui';
+import { Card, Input, Button } from '../ui';
 
 interface SearchFormProps {
   query: string;
