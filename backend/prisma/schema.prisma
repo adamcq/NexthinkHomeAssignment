@@ -50,15 +50,3 @@ enum Category {
   TECH_INDUSTRY_BUSINESS
   OTHER
 }
-
-model ApiKey {
-  id          String   @id @default(uuid())
-  key         String   @unique
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  lastUsedAt  DateTime?
-  isActive    Boolean  @default(true)
-  
-  @@index([key])
-}

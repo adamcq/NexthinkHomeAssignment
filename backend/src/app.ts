@@ -1,16 +1,11 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-// import rateLimit from 'express-rate-limit';
-// import { RedisStore } from 'rate-limit-redis';
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
 import { config } from './config';
 import { logger } from './utils/logger';
 import { redis } from './utils/redis';
 import prisma from './utils/db';
 import articlesRouter from './api/routes/articles';
-import { optionalApiKeyAuth } from './middleware/auth';
 
 const app = express();
 
@@ -35,37 +30,6 @@ app.use(express.urlencoded({ extended: true }));
 // });
 
 // app.use('/api/', limiter);
-
-// Swagger documentation
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'IT Newsfeed API',
-      version: '1.0.0',
-      description: 'API for searching and retrieving IT news articles',
-    },
-    servers: [
-      {
-        url: config.api.baseUrl,
-        description: 'API server',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        ApiKeyAuth: {
-          type: 'apiKey',
-          in: 'header',
-          name: 'x-api-key',
-        },
-      },
-    },
-  },
-  apis: ['./src/api/routes/*.ts'],
-};
-
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Health check
 app.get('/health', async (_req: Request, res: Response): Promise<void> => {
@@ -95,7 +59,7 @@ app.get('/health', async (_req: Request, res: Response): Promise<void> => {
 });
 
 // API routes
-app.use('/api/articles', optionalApiKeyAuth, articlesRouter);
+app.use('/api/articles', articlesRouter);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

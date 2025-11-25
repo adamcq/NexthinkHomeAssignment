@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 import { Category } from '@prisma/client';
+import { SourceMetadata } from '../types/metadata';
 
 type StructuredCategory = {
   category: Category;
@@ -40,22 +41,22 @@ export class LLMClassificationService {
   async classifyArticle(
     title: string,
     content: string,
-    sourceCategories?: string[]
+    metadata?: SourceMetadata
   ): Promise<ClassificationResult> {
-    return this.classifyWithRetry(title, content, sourceCategories, 0);
+    return this.classifyWithRetry(title, content, metadata, 0);
   }
 
   private async classifyWithRetry(
     title: string,
     content: string,
-    sourceCategories: string[] | undefined,
+    metadata: SourceMetadata | undefined,
     attempt: number
   ): Promise<ClassificationResult> {
     try {
       logger.debug(`Classifying article (attempt ${attempt + 1}/${this.maxRetries}): ${title.substring(0, 50)}...`);
 
       const systemInstruction = this.getSystemPrompt();
-      const userPrompt = this.buildClassificationPrompt(title, content, sourceCategories);
+      const userPrompt = this.buildClassificationPrompt(title, content, metadata);
 
       const response = await this.ai.models.generateContent({
         model: config.gemini.model,
@@ -102,7 +103,7 @@ export class LLMClassificationService {
       // Check if this is a 429 rate limit error
       if (this.isRateLimitError(error)) {
         const retryDelay = this.extractRetryDelay(error);
-        logger.warn(`Rate limit exceeded. Retry after ${retryDelay}s`);
+        logger.warn(`Rate limit exceeded. Retry after ${retryDelay}s. Full error:`, error);
         
         // Throw RateLimitError so the caller can handle it appropriately
         throw new RateLimitError(
@@ -117,7 +118,7 @@ export class LLMClassificationService {
         const delay = this.baseRetryDelay * Math.pow(2, attempt);
         logger.warn(`Classification failed (attempt ${attempt + 1}/${this.maxRetries}), retrying in ${delay}ms`, error);
         await this.sleep(delay);
-        return this.classifyWithRetry(title, content, sourceCategories, attempt + 1);
+        return this.classifyWithRetry(title, content, metadata, attempt + 1);
       }
 
       logger.error('Error classifying article after all retries:', error);
@@ -173,24 +174,22 @@ Return the best-fitting category as the primary entry along with optional second
   private buildClassificationPrompt(
     title: string,
     content: string,
-    sourceCategories?: string[]
+    metadata?: SourceMetadata
   ): string {
     // Limit content length to avoid token limits
-    const truncatedContent = content.substring(0, 2000);
-    const trimmedCategories = (sourceCategories || [])
-      .map((c) => c.trim())
-      .filter(Boolean);
-    const categoriesLine = trimmedCategories.length
-      ? `\n\nSource categories (from RSS): ${trimmedCategories.join(', ')}`
+    const truncatedContent = content.substring(0, 4000);
+    
+    const metadataHints = metadata 
+      ? `\n\nAdditional context:\n${JSON.stringify(metadata, null, 2)}`
       : '';
     
     return `Classify the following IT news article:
 
 Title: ${title}
 
-Content: ${truncatedContent}${categoriesLine}
+Content: ${truncatedContent}${metadataHints}
 
-Use the source categories only as a hint if they are helpful and consistent with the content. Provide your classification in JSON format.`;
+Use the additional context only as hints if they are helpful and consistent with the content. Provide your classification in JSON format.`;
   }
 
   private getClassificationSchema() {

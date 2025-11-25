@@ -1,13 +1,13 @@
 import Parser from 'rss-parser';
 import axios from 'axios'; // Used for potential future enhancements
 import { htmlToText } from 'html-to-text';
-import { Prisma } from '@prisma/client';
 import { logger } from '../utils/logger';
 import prisma from '../utils/db';
 import { redis } from '../utils/redis';
 import crypto from 'crypto';
 import { ArticleIngestionService, articleIngestionService } from '../services/ArticleIngestionService';
 import { RateLimitError } from '../services/LLMClassificationService';
+import { RSSMetadata } from '../types/metadata';
 
 export interface RSSFeed {
   title: string;
@@ -144,17 +144,13 @@ export class RSSAggregator {
       const publishedAt = item.pubDate ? new Date(item.pubDate) : new Date();
 
       const sourceFeed = this.feeds.find(f => f.name === source)?.url;
-      const metadataPayload: Prisma.JsonObject = {
+      const metadata: RSSMetadata = {
+        type: 'rss',
         feedUrl: sourceFeed,
+        source,
+        rssCategories: item.categories?.length ? item.categories : undefined,
+        author: item.author,
       };
-
-      if (item.categories?.length) {
-        metadataPayload.rssCategories = item.categories;
-      }
-
-      if (item.author) {
-        metadataPayload.author = item.author;
-      }
 
       await this.ingestion.ingestArticle({
         title: item.title,
@@ -165,7 +161,7 @@ export class RSSAggregator {
         sourceId: crypto.createHash('md5').update(item.link).digest('hex'),
         author: item.author || null,
         publishedAt,
-        metadata: metadataPayload,
+        metadata,
       });
 
       // Mark as seen

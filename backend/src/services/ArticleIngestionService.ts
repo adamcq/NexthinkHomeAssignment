@@ -3,6 +3,7 @@ import prisma from '../utils/db';
 import { logger } from '../utils/logger';
 import { LLMClassificationService, ClassificationResult, RateLimitError } from './LLMClassificationService';
 import { EmbeddingService } from './EmbeddingService';
+import { SourceMetadata, EnrichedMetadata } from '../types/metadata';
 
 export interface ArticleIngestionInput {
   title: string;
@@ -13,7 +14,7 @@ export interface ArticleIngestionInput {
   sourceId: string;
   author?: string | null;
   publishedAt: Date;
-  metadata?: Prisma.JsonValue | null;
+  metadata?: SourceMetadata;
 }
 
 interface IngestionResult {
@@ -40,15 +41,10 @@ export class ArticleIngestionService {
 
     // Classify article - REQUIRED for ingestion
     try {
-      const rssCategories =
-        input.metadata && typeof input.metadata === 'object' && !Array.isArray(input.metadata)
-          ? (input.metadata as Prisma.JsonObject).rssCategories
-          : undefined;
-
       classification = await this.classificationService.classifyArticle(
         input.title,
         input.content,
-        Array.isArray(rssCategories) ? (rssCategories as string[]) : undefined
+        input.metadata
       );
     } catch (error) {
       // Re-throw rate limit errors - caller must handle retry logic
@@ -83,7 +79,7 @@ export class ArticleIngestionService {
         sourceId: input.sourceId,
         author: input.author,
         publishedAt: input.publishedAt,
-        metadata,
+        metadata: metadata as unknown as Prisma.JsonValue,
         category: classification?.category ?? null,
         categoryScore: classification?.confidence ?? null,
       },
@@ -101,40 +97,40 @@ export class ArticleIngestionService {
   }
 
   private buildMetadata(
-    baseMetadata: Prisma.JsonValue | null | undefined,
+    baseMetadata: SourceMetadata | undefined,
     classification: ClassificationResult | null
-  ): Prisma.JsonValue {
-    const metadata: Prisma.JsonObject = this.asJsonObject(baseMetadata);
+  ): EnrichedMetadata | undefined {
+    if (!baseMetadata && !classification) {
+      return undefined;
+    }
+
+    // Start with the source metadata or minimal structure
+    const enriched: EnrichedMetadata = baseMetadata 
+      ? { ...baseMetadata }
+      : { type: 'unknown' } as EnrichedMetadata;
 
     if (classification?.secondaryCategories?.length) {
-      metadata.secondaryCategories = classification.secondaryCategories.map((entry) => ({
+      enriched.secondaryCategories = classification.secondaryCategories.map((entry) => ({
         category: entry.category,
         confidence: entry.confidence,
       }));
     }
 
     if (classification?.reasoning) {
-      metadata.classificationReasoning = classification.reasoning;
+      enriched.classificationReasoning = classification.reasoning;
     }
 
     if (classification) {
-      metadata.classifiedAt = new Date().toISOString();
+      enriched.classifiedAt = new Date().toISOString();
     }
 
-    return metadata;
-  }
-
-  private asJsonObject(value: Prisma.JsonValue | null | undefined): Prisma.JsonObject {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      return { ...(value as Prisma.JsonObject) };
-    }
-    return {};
+    return enriched;
   }
 
   private buildEmbeddingText(input: ArticleIngestionInput): string {
-    const summaryOrContent = input.summary || input.content;
-    const truncatedContent = summaryOrContent.substring(0, 4000);
-    return `${input.title}\n\n${truncatedContent}`;
+    const contentOrSummary = input.content || input.summary || '';
+    const truncatedContent = contentOrSummary.substring(0, 4000); // should give enough context
+    return `${input.title}\n\n${truncatedContent}\n\n${input.metadata ? JSON.stringify(input.metadata) : ''}`;
   }
 
   private async persistEmbedding(articleId: string, embedding: number[]): Promise<void> {

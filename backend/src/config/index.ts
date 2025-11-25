@@ -30,18 +30,9 @@ export const config = {
     baseUrl: process.env.API_BASE_URL || 'http://localhost:3000',
   },
   
-  rateLimit: {
-    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
-  },
-  
   fetching: {
     intervalMinutes: parseInt(process.env.FETCH_INTERVAL_MINUTES || '3', 10),
     articlesRetentionDays: parseInt(process.env.ARTICLES_RETENTION_DAYS || '30', 10),
-  },
-  
-  jwt: {
-    secret: process.env.JWT_SECRET || 'change_this_secret_in_production',
   },
 };
 

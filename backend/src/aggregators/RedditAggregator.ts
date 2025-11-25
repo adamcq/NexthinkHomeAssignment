@@ -4,6 +4,7 @@ import prisma from '../utils/db';
 import { redis } from '../utils/redis';
 import { ArticleIngestionService, articleIngestionService } from '../services/ArticleIngestionService';
 import { RateLimitError } from '../services/LLMClassificationService';
+import { RedditMetadata } from '../types/metadata';
 
 export interface RedditPost {
   id: string;
@@ -132,6 +133,17 @@ export class RedditAggregator {
       const content = post.selftext || post.title;
       const isExternalLink = !post.url.includes('reddit.com');
 
+      const metadata: RedditMetadata = {
+        type: 'reddit',
+        source: 'reddit',
+        subreddit,
+        author: post.author,
+        score: post.score,
+        num_comments: post.num_comments,
+        permalink: post.permalink,
+        external_url: isExternalLink ? post.url : null,
+      };
+
       await this.ingestion.ingestArticle({
         title: post.title,
         content,
@@ -141,12 +153,7 @@ export class RedditAggregator {
         sourceId: post.id,
         author: post.author,
         publishedAt: new Date(post.created_utc * 1000),
-        metadata: {
-          subreddit,
-          score: post.score,
-          num_comments: post.num_comments,
-          external_url: isExternalLink ? post.url : null,
-        },
+        metadata,
       });
 
       // Mark as seen

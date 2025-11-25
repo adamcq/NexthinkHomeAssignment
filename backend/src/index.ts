@@ -13,7 +13,6 @@ const scheduler = new Scheduler();
 // Start server
 const server = app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
-  logger.info(`API documentation available at ${config.api.baseUrl}/api-docs`);
   logger.info(`Environment: ${config.nodeEnv}`);
   
   // Start background workers
