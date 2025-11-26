@@ -2,7 +2,10 @@
 
 Real-time news aggregation, LLM-based classification, and semantic search API for IT-related content.
 
-**Live Demo:** https://newsfeed-frontend.onrender.com
+**Live Demo:** https://newsfeed-frontend.onrender.com 
+- could take up to 50 seconds to boot
+- could take few seconds or minutes afterwards for all articles to be classified
+- The reason for both delays is that I am using free tier for both RENDER deplot and GEMINI API
 
 ## Quick Start
 
