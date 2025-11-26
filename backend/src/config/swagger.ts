@@ -13,6 +13,10 @@ const options: swaggerJsdoc.Options = {
         },
         servers: [
             {
+                url: 'https://newsfeed-frontend.onrender.com',
+                description: 'Production server',
+            },
+            {
                 url: 'http://localhost:3000',
                 description: 'Development server',
             },

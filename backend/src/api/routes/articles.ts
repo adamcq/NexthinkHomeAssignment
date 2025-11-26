@@ -333,6 +333,92 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 /**
  * @swagger
  * /api/articles/stats/categories:
+ *   post:
+ *     summary: Get filtered category statistics
+ *     description: Retrieve the count of articles in each category based on search filters. Returns counts that match the current search query, source, and date range filters.
+ *     tags: [Articles]
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               query:
+ *                 type: string
+ *                 description: Search query to filter articles
+ *                 example: "artificial intelligence"
+ *               source:
+ *                 type: string
+ *                 enum: [reddit, arstechnica, techcrunch]
+ *                 description: Filter by article source
+ *                 example: "techcrunch"
+ *               startDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Filter articles published after this date
+ *                 example: "2024-01-01T00:00:00Z"
+ *               endDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Filter articles published before this date
+ *                 example: "2024-01-31T23:59:59Z"
+ *     responses:
+ *       200:
+ *         description: Filtered category statistics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/CategoryStats'
+ *             example:
+ *               - category: "AI_EMERGING_TECH"
+ *                 count: 45
+ *               - category: "CYBERSECURITY"
+ *                 count: 12
+ *               - category: "SOFTWARE_DEVELOPMENT"
+ *                 count: 8
+ *               - category: "HARDWARE_DEVICES"
+ *                 count: 3
+ *               - category: "TECH_INDUSTRY_BUSINESS"
+ *                 count: 2
+ *               - category: "OTHER"
+ *                 count: 0
+ *       400:
+ *         description: Invalid request parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/stats/categories', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { query, source, startDate, endDate } = req.body;
+
+    const params: any = {};
+    if (query) params.query = query;
+    if (source) params.source = source;
+    if (startDate) params.startDate = new Date(startDate);
+    if (endDate) params.endDate = new Date(endDate);
+
+    const stats = await searchService.getCategoryStatsFiltered(params);
+    res.json(stats);
+  } catch (error) {
+    logger.error('Get filtered category stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/articles/stats/categories:
  *   get:
  *     summary: Get category statistics
  *     description: Retrieve the count of articles in each category. Useful for displaying category distribution or filtering options.

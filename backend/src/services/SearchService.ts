@@ -48,7 +48,7 @@ export class SearchService {
     try {
       let articles;
       let total;
-      
+
       if (query) {
         // Perform hybrid search (keyword + semantic)
         const result = await this.hybridSearch(query, params);
@@ -96,7 +96,7 @@ export class SearchService {
 
     // Build where clause
     const where: any = {};
-    
+
     if (category) where.category = category;
     if (source) where.source = source;
     if (startDate || endDate) {
@@ -168,7 +168,7 @@ export class SearchService {
 
     const results = await prisma.$queryRawUnsafe(queryText, ...valueParams) as any[];
     const total = results.length > 0 ? Number(results[0].total_count) : 0;
-    
+
     // Remove total_count from each article object to avoid BigInt serialization issues
     const articles = results.map(({ total_count, ...article }) => article);
 
@@ -179,7 +179,7 @@ export class SearchService {
     const { category, startDate, endDate, source, limit = 20, offset = 0 } = params;
 
     const where: any = {};
-    
+
     if (category) where.category = category;
     if (source) where.source = source;
     if (startDate || endDate) {
@@ -233,6 +233,84 @@ export class SearchService {
     }));
   }
 
+  async getCategoryStatsFiltered(params: Omit<SearchParams, 'category' | 'limit' | 'offset'>): Promise<any> {
+    const { query, startDate, endDate, source } = params;
+    const allCategories = Object.values(Category);
+
+    // Build base where clause
+    const where: any = {
+      category: { not: null },
+    };
+
+    if (source) where.source = source;
+    if (startDate || endDate) {
+      where.publishedAt = {};
+      if (startDate) where.publishedAt.gte = startDate;
+      if (endDate) where.publishedAt.lte = endDate;
+    }
+
+    // If there's a query, we need to use full-text search
+    if (query) {
+      // Use raw SQL to get category counts with text search
+      const filters: string[] = ['category IS NOT NULL'];
+      const valueParams: any[] = [query];
+      let dynamicIndex = 2;
+
+      if (source) {
+        filters.push(`source = $${dynamicIndex++}`);
+        valueParams.push(source);
+      }
+      if (startDate) {
+        filters.push(`"publishedAt" >= $${dynamicIndex++}`);
+        valueParams.push(startDate);
+      }
+      if (endDate) {
+        filters.push(`"publishedAt" <= $${dynamicIndex++}`);
+        valueParams.push(endDate);
+      }
+
+      const whereClause = filters.join(' AND ');
+      const queryText = `
+        SELECT category, COUNT(*) as count
+        FROM "Article"
+        WHERE to_tsvector('english', title || ' ' || content) @@ plainto_tsquery('english', $1)
+        AND ${whereClause}
+        GROUP BY category
+      `;
+
+      const stats = await prisma.$queryRawUnsafe(queryText, ...valueParams) as any[];
+
+      const statMap = new Map<string, number>();
+      stats.forEach(stat => {
+        statMap.set(stat.category, Number(stat.count));
+      });
+
+      return allCategories.map(category => ({
+        category,
+        count: statMap.get(category) ?? 0,
+      }));
+    }
+
+    // No query - use regular groupBy
+    const stats = await prisma.article.groupBy({
+      by: ['category'],
+      _count: {
+        id: true,
+      },
+      where,
+    });
+
+    const statMap = new Map<string, number>();
+    stats.forEach(stat => {
+      statMap.set(stat.category, stat._count.id ?? (stat._count as any)._all ?? 0);
+    });
+
+    return allCategories.map(category => ({
+      category,
+      count: statMap.get(category) ?? 0,
+    }));
+  }
+
   private getCacheKey(params: SearchParams): string {
     const key = JSON.stringify(params);
     return `search:${crypto.createHash('md5').update(key).digest('hex')}`;
@@ -242,11 +320,11 @@ export class SearchService {
     try {
       const key = this.getCacheKey(params);
       const cached = await redis.get(key);
-      
+
       if (cached) {
         return JSON.parse(cached);
       }
-      
+
       return null;
     } catch (error) {
       logger.warn('Cache get error:', error);
