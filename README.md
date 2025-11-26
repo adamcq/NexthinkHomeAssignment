@@ -108,6 +108,7 @@ npm test
 Full interactive API documentation available at `/api-docs` (Swagger UI).
 
 # Assumptions & Discussion
+- One class per article - I am letting the LLM return multiple classes with confidence percentages and store all with confidence above 60% in the metadata, but I only expose the highest confidence class to the API
 - RSS feed contains enough information to classify the article (otherwise scraping would be required and I am not sure of the legal implications so I did not implement it)
 - I am assuming an upper bound on the number of articles to be ingested - it could happen that some articles are not ingested if we fetch too little (this could be fixed by increasingly fetching more until we fetch an article/reddit post that was ingested or has a lower timestamp)
 - The ingestion is done immediately and the classification is done asynchronously - this means there is a short period when the article is stored but not yet classified - I did it this way to keep the code modular and to avoid blocking the ingestion process
