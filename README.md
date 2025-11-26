@@ -11,7 +11,7 @@ Real-time news aggregation, LLM-based classification, and semantic search API fo
 npm install
 
 # 2. Set up environment variables
-cp backend/.env.example backend/.env
+cp .env.example backend/.env
 # Edit backend/.env with your API keys (Gemini)
 
 # 3. Set up database
