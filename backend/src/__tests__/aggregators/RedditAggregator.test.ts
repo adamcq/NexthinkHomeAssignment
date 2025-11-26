@@ -2,6 +2,7 @@ import { RedditAggregator } from '../../aggregators/RedditAggregator';
 import { db } from '../../utils/db';
 import { redis } from '../../utils/redis';
 import { ArticleIngestionService } from '../../services/ArticleIngestionService';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 jest.mock('../../utils/db');
 jest.mock('../../utils/redis');
