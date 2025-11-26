@@ -2,6 +2,8 @@
 
 Real-time news aggregation, LLM-based classification, and semantic search API for IT-related content.
 
+**Live Demo:** https://newsfeed-frontend.onrender.com
+
 ## Quick Start
 
 ```bash
@@ -15,7 +17,12 @@ cp backend/.env.example backend/.env
 # 3. Set up database
 docker-compose up -d
 
-# 4. Start both backend and frontend
+# 4 Run database migrations
+cd backend
+npx prisma migrate dev --name init
+cd ..
+
+# 5. Start both backend and frontend
 npm run dev
 ```
 
@@ -67,6 +74,7 @@ The Redis CLI can be accessed with the following command:
 ```bash
 docker exec -it $(docker ps --filter "name=redis" --format "{{.ID}}") redis-cli
 ```
+You can view the cached results
 
 ### View Logs
 - Application logs: Console output with Winston logger
@@ -98,8 +106,6 @@ npm test
 ## API Documentation
 
 Full interactive API documentation available at `/api-docs` (Swagger UI).
-
-## Production
 
 # Assumptions & Discussion
 - RSS feed contains enough information to classify the article (otherwise scraping would be required and I am not sure of the legal implications so I did not implement it)
