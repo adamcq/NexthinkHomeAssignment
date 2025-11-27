@@ -140,7 +140,7 @@ export class SearchService {
     }
 
     const whereClause = filters.length ? `AND ${filters.join(' AND ')}` : '';
-    const textRankExpr = `ts_rank(\n          to_tsvector('english', title || ' ' || content), \n          plainto_tsquery('english', $1)\n        )`;
+    const textRankExpr = `ts_rank(\n          to_tsvector('english', title || ' ' || content || ' ' || source), \n          plainto_tsquery('english', $1)\n        )`;
     const vectorScoreExpr = vectorLiteral ? `COALESCE(1 - ("Article"."embedding" <#> ${vectorLiteral}), 0)` : '0';
     const hybridScoreExpr = vectorLiteral ? '(text_rank + vector_score)' : 'text_rank';
 
@@ -153,7 +153,7 @@ export class SearchService {
           ${vectorScoreExpr} as vector_score,
           COUNT(*) OVER() as total_count
         FROM "Article"
-        WHERE to_tsvector('english', title || ' ' || content) @@ plainto_tsquery('english', $1)
+        WHERE to_tsvector('english', title || ' ' || content || ' ' || source) @@ plainto_tsquery('english', $1)
         ${whereClause}
       )
       SELECT *,
@@ -273,7 +273,7 @@ export class SearchService {
       const queryText = `
         SELECT category, COUNT(*) as count
         FROM "Article"
-        WHERE to_tsvector('english', title || ' ' || content) @@ plainto_tsquery('english', $1)
+        WHERE to_tsvector('english', title || ' ' || content || ' ' || source) @@ plainto_tsquery('english', $1)
         AND ${whereClause}
         GROUP BY category
       `;
