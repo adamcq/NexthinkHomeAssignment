@@ -14,7 +14,11 @@
     "prisma:studio": "prisma studio",
     "worker": "node dist/workers/index.js",
     "lint": "eslint . --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\"",
+    "retry-failed": "ts-node src/scripts/retry-failed-classifications.ts",
+    "list-failed": "ts-node src/scripts/list-failed-articles.ts",
+    "check-pending": "ts-node src/scripts/check-pending-articles.ts",
+    "fix-pending-status": "ts-node src/scripts/fix-pending-status.ts"
   },
   "keywords": [],
   "author": "",
