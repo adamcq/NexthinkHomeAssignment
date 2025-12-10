@@ -2,13 +2,15 @@ import type { CategoryStats as CategoryStatsType, Category } from '../../types';
 import { CATEGORY_LABELS } from '../../config/constants';
 
 interface CategoryStatsProps {
+  total: number;
   stats: CategoryStatsType[];
   selectedCategory: Category | '';
   onCategorySelect: (category: Category | '') => void;
 }
 
-export function CategoryStats({ stats, selectedCategory, onCategorySelect }: CategoryStatsProps) {
-  const totalCount = stats.reduce((sum, stat) => sum + stat.count, 0);
+export function CategoryStats({ total, stats, selectedCategory, onCategorySelect }: CategoryStatsProps) {
+  // const totalCount = stats.reduce((sum, stat) => sum + stat.count, 0);
+  const totalCount = total;
 
   return (
     <div className="flex items-stretch justify-between gap-3 px-6 py-4 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-gray-200 shadow-sm">

@@ -47,6 +47,7 @@ function App() {
             />
             {categoryStats && (
               <CategoryStats
+                total={searchResults?.total || 0}
                 stats={categoryStats}
                 selectedCategory={selectedCategory}
                 onCategorySelect={setSelectedCategory}
