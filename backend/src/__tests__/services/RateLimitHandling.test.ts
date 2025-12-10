@@ -1,4 +1,5 @@
 import { LLMClassificationService, RateLimitError } from '../../services/LLMClassificationService';
+import { describe, it, expect, jest } from '@jest/globals';
 
 describe('Rate Limit Error Handling', () => {
   it('should throw RateLimitError on 429 status code', async () => {

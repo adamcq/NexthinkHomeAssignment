@@ -20,26 +20,27 @@ export const aggregationQueue = new Bull('article-aggregation', config.redis.url
 // Process Reddit aggregation jobs
 aggregationQueue.process('fetch-reddit', async (job) => {
   logger.info('Processing Reddit aggregation job');
-  
+
   try {
     const aggregator = new RedditAggregator();
     const count = await aggregator.aggregateAndStore();
-    logger.info(`Reddit aggregation complete: ${count} articles stored`);
+    logger.info(`Reddit aggregation complete: ${count} articles stored and queued for classification`);
+
     return { source: 'reddit', articlesStored: count };
   } catch (error) {
     if (error instanceof RateLimitError) {
       // Re-queue the job with delay based on API's retry-after
       const delayMs = error.retryAfterSeconds * 1000;
-      
+
       await aggregationQueue.add('fetch-reddit', job.data, {
         delay: delayMs,
         jobId: `reddit-retry-${Date.now()}`,
       });
-      
+
       logger.warn(
         `Rate limit hit for Reddit aggregation. Retrying in ${error.retryAfterSeconds}s (scheduled for ${new Date(Date.now() + delayMs).toISOString()})`
       );
-      
+
       return {
         source: 'reddit',
         rateLimited: true,
@@ -47,7 +48,7 @@ aggregationQueue.process('fetch-reddit', async (job) => {
         retryScheduledAt: new Date(Date.now() + delayMs).toISOString(),
       };
     }
-    
+
     // Re-throw other errors for Bull's retry mechanism
     throw error;
   }
@@ -56,26 +57,27 @@ aggregationQueue.process('fetch-reddit', async (job) => {
 // Process RSS aggregation jobs
 aggregationQueue.process('fetch-rss', async (job) => {
   logger.info('Processing RSS aggregation job');
-  
+
   try {
     const aggregator = new RSSAggregator();
     const count = await aggregator.aggregateAndStore();
-    logger.info(`RSS aggregation complete: ${count} articles stored`);
+    logger.info(`RSS aggregation complete: ${count} articles stored and queued for classification`);
+
     return { source: 'rss', articlesStored: count };
   } catch (error) {
     if (error instanceof RateLimitError) {
       // Re-queue the job with delay based on API's retry-after
       const delayMs = error.retryAfterSeconds * 1000;
-      
+
       await aggregationQueue.add('fetch-rss', job.data, {
         delay: delayMs,
         jobId: `rss-retry-${Date.now()}`,
       });
-      
+
       logger.warn(
         `Rate limit hit for RSS aggregation. Retrying in ${error.retryAfterSeconds}s (scheduled for ${new Date(Date.now() + delayMs).toISOString()})`
       );
-      
+
       return {
         source: 'rss',
         rateLimited: true,
@@ -83,7 +85,7 @@ aggregationQueue.process('fetch-rss', async (job) => {
         retryScheduledAt: new Date(Date.now() + delayMs).toISOString(),
       };
     }
-    
+
     // Re-throw other errors for Bull's retry mechanism
     throw error;
   }

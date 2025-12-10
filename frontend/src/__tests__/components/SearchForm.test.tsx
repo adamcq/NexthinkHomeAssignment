@@ -12,73 +12,77 @@ describe('SearchForm', () => {
     onSubmit: vi.fn(),
   };
 
-  it('renders search input and category select', () => {
+  it('renders search input and submit button', () => {
     render(<SearchForm {...mockProps} />);
-    
+
     expect(screen.getByLabelText(/search articles/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/category/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument();
   });
 
   it('calls onQueryChange when typing in search input', async () => {
     const user = userEvent.setup();
     const onQueryChange = vi.fn();
-    
+
     render(<SearchForm {...mockProps} onQueryChange={onQueryChange} />);
-    
+
     const input = screen.getByLabelText(/search articles/i);
     await user.type(input, 'AI news');
-    
+
     // userEvent.type calls onChange for each character, check last call
     expect(onQueryChange).toHaveBeenLastCalledWith('s');
     expect(onQueryChange).toHaveBeenCalledTimes(7);
   });
 
-  it('calls onCategoryChange when selecting a category', async () => {
-    const user = userEvent.setup();
-    const onCategoryChange = vi.fn();
-    
-    render(<SearchForm {...mockProps} onCategoryChange={onCategoryChange} />);
-    
-    const select = screen.getByLabelText(/category/i);
-    await user.selectOptions(select, 'CYBERSECURITY');
-    
-    expect(onCategoryChange).toHaveBeenCalledWith('CYBERSECURITY');
-  });
-
   it('calls onSubmit when form is submitted', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn((e) => e.preventDefault());
-    
+
     render(<SearchForm {...mockProps} onSubmit={onSubmit} />);
-    
+
     const button = screen.getByRole('button', { name: /search/i });
     await user.click(button);
-    
+
     expect(onSubmit).toHaveBeenCalled();
   });
 
   it('displays current query value', () => {
     render(<SearchForm {...mockProps} query="test query" />);
-    
+
     const input = screen.getByLabelText(/search articles/i) as HTMLInputElement;
     expect(input.value).toBe('test query');
   });
 
-  it('displays current category value', () => {
-    render(<SearchForm {...mockProps} category="AI_EMERGING_TECH" />);
-    
-    const select = screen.getByLabelText(/category/i) as HTMLSelectElement;
-    expect(select.value).toBe('AI_EMERGING_TECH');
+  it('submits form on Enter key', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn((e) => e.preventDefault());
+
+    render(<SearchForm {...mockProps} onSubmit={onSubmit} />);
+
+    const input = screen.getByLabelText(/search articles/i);
+    await user.type(input, 'test{Enter}');
+
+    expect(onSubmit).toHaveBeenCalled();
   });
 
-  it('shows all category options', () => {
-    render(<SearchForm {...mockProps} />);
-    
-    const select = screen.getByLabelText(/category/i);
-    const options = Array.from(select.querySelectorAll('option'));
-    
-    expect(options.length).toBeGreaterThan(1);
-    expect(options[0]).toHaveTextContent(/all categories/i);
+  it('clears input when query prop changes', () => {
+    const { rerender } = render(<SearchForm {...mockProps} query="initial" />);
+
+    const input = screen.getByLabelText(/search articles/i) as HTMLInputElement;
+    expect(input.value).toBe('initial');
+
+    rerender(<SearchForm {...mockProps} query="" />);
+    expect(input.value).toBe('');
+  });
+
+  it('allows typing special characters', async () => {
+    const user = userEvent.setup();
+    const onQueryChange = vi.fn();
+
+    render(<SearchForm {...mockProps} onQueryChange={onQueryChange} />);
+
+    const input = screen.getByLabelText(/search articles/i);
+    await user.type(input, 'AI & ML');
+
+    expect(onQueryChange).toHaveBeenCalled();
   });
 });

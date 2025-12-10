@@ -35,11 +35,15 @@ model Article {
   // Additional metadata
   metadata      Json?    // Source-specific data (score, comments, etc.)
   
+  // Classification status
+  classificationStatus ClassificationStatus @default(PENDING)
+
   @@index([source])
   @@index([publishedAt])
   @@index([category])
   @@index([fetchedAt])
   @@index([url])
+  @@index([classificationStatus])
 }
 
 enum Category {
@@ -49,4 +53,10 @@ enum Category {
   HARDWARE_DEVICES
   TECH_INDUSTRY_BUSINESS
   OTHER
+}
+
+enum ClassificationStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }

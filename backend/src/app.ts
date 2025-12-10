@@ -36,10 +36,10 @@ app.get('/health', async (_req: Request, res: Response): Promise<void> => {
   try {
     // Check database
     await prisma.$queryRaw`SELECT 1`;
-    
+
     // Check Redis
     await redis.ping();
-    
+
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -58,8 +58,14 @@ app.get('/health', async (_req: Request, res: Response): Promise<void> => {
   }
 });
 
+import swaggerUi from 'swagger-ui-express';
+import { specs } from './config/swagger';
+
+// ...
+
 // API routes
 app.use('/api/articles', articlesRouter);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

@@ -2,6 +2,7 @@ import { RSSAggregator } from '../../aggregators/RSSAggregator';
 import { db } from '../../utils/db';
 import { redis } from '../../utils/redis';
 import { ArticleIngestionService } from '../../services/ArticleIngestionService';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 // Mock dependencies
 jest.mock('../../utils/db');

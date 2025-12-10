@@ -4,6 +4,7 @@ import articlesRouter from '../../../api/routes/articles';
 import { SearchService } from '../../../services/SearchService';
 import { db } from '../../../utils/db';
 import { Category } from '@prisma/client';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 // Mock dependencies
 jest.mock('../../../services/SearchService');

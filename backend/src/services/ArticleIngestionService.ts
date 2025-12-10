@@ -19,7 +19,6 @@ export interface ArticleIngestionInput {
 
 interface IngestionResult {
   article: Article;
-  classification: ClassificationResult | null;
   embeddingStored: boolean;
 }
 
@@ -36,29 +35,7 @@ export class ArticleIngestionService {
   }
 
   async ingestArticle(input: ArticleIngestionInput): Promise<IngestionResult> {
-    let classification: ClassificationResult | null = null;
     let embedding: number[] | null = null;
-
-    // Classify article - REQUIRED for ingestion
-    try {
-      classification = await this.classificationService.classifyArticle(
-        input.title,
-        input.content,
-        input.metadata
-      );
-    } catch (error) {
-      // Re-throw rate limit errors - caller must handle retry logic
-      if (error instanceof RateLimitError) {
-        logger.error('Rate limit exceeded during classification, cannot ingest article', {
-          retryAfterSeconds: error.retryAfterSeconds,
-        });
-        throw error;
-      }
-      
-      // For other errors, also fail the ingestion - we require classification
-      logger.error('Article classification failed, cannot ingest without classification', error);
-      throw error;
-    }
 
     // Generate embedding
     try {
@@ -67,7 +44,7 @@ export class ArticleIngestionService {
       logger.warn('Embedding generation failed, continuing without vector data', error);
     }
 
-    const metadata = this.buildMetadata(input.metadata, classification);
+    const metadata = this.buildMetadata(input.metadata);
 
     const article = await prisma.article.create({
       data: {
@@ -80,8 +57,7 @@ export class ArticleIngestionService {
         author: input.author,
         publishedAt: input.publishedAt,
         metadata: metadata as unknown as Prisma.JsonValue,
-        category: classification?.category ?? null,
-        categoryScore: classification?.confidence ?? null,
+        classificationStatus: 'PENDING',
       },
     });
 
@@ -89,42 +65,32 @@ export class ArticleIngestionService {
       await this.persistEmbedding(article.id, embedding);
     }
 
+    // Queue for classification immediately - no database scanning needed
+    try {
+      const { classificationQueue } = await import('../workers/classificationQueue');
+      await classificationQueue.add({ articleId: article.id });
+      logger.debug(`Queued article ${article.id} for classification`);
+    } catch (error) {
+      logger.warn(`Failed to queue article ${article.id} for classification:`, error);
+      // Don't fail ingestion if queueing fails - article will be in PENDING state
+      // and can be picked up by a backfill script if needed
+    }
+
     return {
       article,
-      classification,
       embeddingStored: Boolean(embedding?.length),
     };
   }
 
   private buildMetadata(
-    baseMetadata: SourceMetadata | undefined,
-    classification: ClassificationResult | null
+    baseMetadata: SourceMetadata | undefined
   ): EnrichedMetadata | undefined {
-    if (!baseMetadata && !classification) {
+    if (!baseMetadata) {
       return undefined;
     }
 
-    // Start with the source metadata or minimal structure
-    const enriched: EnrichedMetadata = baseMetadata 
-      ? { ...baseMetadata }
-      : { type: 'unknown' } as EnrichedMetadata;
-
-    if (classification?.secondaryCategories?.length) {
-      enriched.secondaryCategories = classification.secondaryCategories.map((entry) => ({
-        category: entry.category,
-        confidence: entry.confidence,
-      }));
-    }
-
-    if (classification?.reasoning) {
-      enriched.classificationReasoning = classification.reasoning;
-    }
-
-    if (classification) {
-      enriched.classifiedAt = new Date().toISOString();
-    }
-
-    return enriched;
+    // Start with the source metadata
+    return { ...baseMetadata };
   }
 
   private buildEmbeddingText(input: ArticleIngestionInput): string {

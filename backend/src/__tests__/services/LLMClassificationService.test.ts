@@ -1,5 +1,6 @@
 import { LLMClassificationService } from '../../services/LLMClassificationService';
 import { Category } from '@prisma/client';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 const mockGenerateContent = jest.fn();
 

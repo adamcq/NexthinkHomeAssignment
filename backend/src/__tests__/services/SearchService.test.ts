@@ -2,6 +2,7 @@ import { SearchService } from '../../services/SearchService';
 import { db } from '../../utils/db';
 import { redis } from '../../utils/redis';
 import { Category } from '@prisma/client';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 jest.mock('../../utils/db');
 jest.mock('../../utils/redis');
@@ -153,10 +154,19 @@ describe('SearchService', () => {
 
       const result = await searchService.getCategoryStats();
 
-      expect(result).toHaveLength(3);
+      // Should return all 6 categories (including those with 0 count)
+      expect(result).toHaveLength(6);
       expect(result[0]).toHaveProperty('category');
       expect(result[0]).toHaveProperty('count');
-      expect(result[0].count).toBeGreaterThan(0);
+
+      // Find the categories that should have counts
+      const cybersecurity = result.find(r => r.category === Category.CYBERSECURITY);
+      const aiTech = result.find(r => r.category === Category.AI_EMERGING_TECH);
+      const softwareDev = result.find(r => r.category === Category.SOFTWARE_DEVELOPMENT);
+
+      expect(cybersecurity?.count).toBe(15);
+      expect(aiTech?.count).toBe(23);
+      expect(softwareDev?.count).toBe(18);
     });
 
     it('should handle empty database', async () => {
@@ -164,7 +174,9 @@ describe('SearchService', () => {
 
       const result = await searchService.getCategoryStats();
 
-      expect(result).toEqual([]);
+      // Should return all 6 categories with 0 count
+      expect(result).toHaveLength(6);
+      expect(result.every(r => r.count === 0)).toBe(true);
     });
   });
 });

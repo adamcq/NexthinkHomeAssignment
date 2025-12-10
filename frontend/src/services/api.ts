@@ -28,3 +28,9 @@ export const getCategoryStats = async (): Promise<CategoryStats[]> => {
   const response = await api.get('/articles/stats/categories');
   return response.data;
 };
+
+export const getFilteredCategoryStats = async (params: Omit<SearchParams, 'limit' | 'offset'>): Promise<CategoryStats[]> => {
+  const response = await api.post('/articles/stats/categories', params);
+  return response.data;
+};
+

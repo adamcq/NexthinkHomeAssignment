@@ -110,7 +110,7 @@ export class RSSAggregator {
   private async storeFeedItem(item: RSSFeed, source: string): Promise<boolean> {
     // Use the raw link as the cache key
     const cacheKey = `seen:${source}:${item.link}`;
-    
+
     try {
       if (!item.link) {
         logger.warn('Feed item missing link, skipping');
@@ -174,7 +174,7 @@ export class RSSAggregator {
       if (error instanceof RateLimitError) {
         throw error;
       }
-      
+
       // Handle duplicate URL (race condition between check and insert)
       if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
         await redis.setex(cacheKey, 86400 * 7, '1');

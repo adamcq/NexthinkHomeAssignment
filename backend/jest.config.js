@@ -15,4 +15,13 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  globals: {
+    'ts-jest': {
+      isolatedModules: true,
+      diagnostics: {
+        warnOnly: true,
+        ignoreCodes: [2345, 2322, 2339, 2304, 2503, 2593],
+      },
+    },
+  },
 };

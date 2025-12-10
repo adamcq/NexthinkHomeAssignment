@@ -17,9 +17,16 @@ function App() {
     handlePageChange,
     currentPage,
     refetch,
+    searchParams,
   } = useArticleSearch();
 
-  const { categoryStats } = useCategoryStats();
+  // Get category stats filtered by current search (excluding category filter to show all categories)
+  const { categoryStats } = useCategoryStats({
+    query: searchParams.query,
+    source: searchParams.source,
+    startDate: searchParams.startDate,
+    endDate: searchParams.endDate,
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -39,8 +46,8 @@ function App() {
               onSubmit={handleSearch}
             />
             {categoryStats && (
-              <CategoryStats 
-                stats={categoryStats} 
+              <CategoryStats
+                stats={categoryStats}
                 selectedCategory={selectedCategory}
                 onCategorySelect={setSelectedCategory}
               />

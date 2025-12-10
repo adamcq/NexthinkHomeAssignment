@@ -56,5 +56,6 @@ export function useArticleSearch() {
     handlePageChange,
     currentPage,
     refetch,
+    searchParams,
   };
 }
